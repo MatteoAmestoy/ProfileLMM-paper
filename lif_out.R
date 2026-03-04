@@ -1,19 +1,22 @@
 # Plot results from real data
 
-setwd('/Lifeline_server/')
-storeMain = readRDS('profile_DiasStab.RData')
-storeStab = readRDS('profile_DiasMain.RData')
+
 # out = readRDS('DiasMain.RData')
 
 source("paper_utility.R")
 library(openxlsx)
 library(ggplot2)
 
-
-
 varNames = read.xlsx('VarNames.xlsx')
+
+setwd('Lifeline_server/')
+storeMain = readRDS('profile_DiasStab.RData')
+storeStab = readRDS('profile_DiasMain.RData')
+
 expLabel = c('main','stab')
 
+windows()
+plot(storeMain$BetaFE[1,],ylab = 'Fixed effect intercept',xlab = 'Iterations')
 
 
 idxClusMain = which(table(storeMain$optClus)>100)
@@ -205,7 +208,7 @@ for(store in list(storeMain,storeStab)){
     "4" = colors_for_labels[4],
     "5" = colors_for_labels[5]
   )
-  pct = 10
+  pct = 5
   plo={}
   for (i in 1:4){
     coef_data <- data.frame(

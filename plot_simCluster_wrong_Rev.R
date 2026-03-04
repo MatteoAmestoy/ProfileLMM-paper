@@ -12,35 +12,43 @@ library(fpc)#pamk
 library(Spectrum)#estimate_k/cluster_similarity
 library(aricode)#cluster comparison
 library(matlib)
+
+library(pracma) # tic/toc zeros
 setwd("C:/Users/VNOB-0731/Documents/GitHub/profileLMM/Restart/")
 Rcpp::sourceCpp("ProfileGibbsCPPV2.cpp")
 source("paper_utility.R")
 source("utility_functions.R")
 
-set.seed(3)
+set.seed(20)
+seeds = sample(40000,500)
 
 store = readRDS(paste0('C:/Users/VNOB-0731/Documents/GitHub/profileLMM/Restart/simPaper.RData'))
 # store = readRDS(paste0('C:/Users/VNOB-0731/Documents/GitHub/profileLMM/Restart/whynot.RData'))
+
+
+
 listSU = names(store$SetUps)
 # listSU = list('Wrong')
 theta0 = store$theta0
 SetUps = store$SetUps
 
-out = {}
+
 nInd = 1000
 nR = 3
+out={}
 for(SU in listSU){#
+  
   sim =  sim_lif_v2(nInd,nR,SetUps[[SU]]$paramLat,theta0)
   SetUps[[SU]]$data = sim
-
-
+  
+  
   dataPro = process_Data_outcome(sim$covList, sim$df, intercept = list(FE=T,RE=F,Lat =T))
-
+  
   nC = 30
   # prior
   priorInit = {}
   prior = prior_init(dataPro$params, nC, priorInit)
-
+  
   startTheta = {}
   f_noLAt = as.formula(paste0('Y~',
                               paste0(sim$covList$FE,collapse = '+'),
@@ -51,7 +59,7 @@ for(SU in listSU){#
   lmm_noLAt = lmer(f_noLAt,sim$df,REML =F)
   startTheta$betaFE = fixef(lmm_noLAt)
   theta_Start = theta_init(prior,dataPro$params,nC,startTheta)
-
+  
   if (SU == 'CorHard' ){
     nSim = 3000
     nBurnIn = 1000
@@ -59,10 +67,10 @@ for(SU in listSU){#
     nSim = 3000
     nBurnIn = 2000
   }
-
+  
   out[[SU]] = profileLMM_Gibbs(dataPro,nSim+nBurnIn+1,nBurnIn,nC,prior,theta_Start)
-
-
+  
+  
   # Optimal Cluster Estimation ------------------------------------------------------------------
   coocc = create_co_occurrence_matrix_r(out[[SU]]$Z)
   tmp = estimate_k(coocc, maxk = 15,showplots=F)
@@ -77,7 +85,7 @@ for(SU in listSU){#
   out[[SU]]$coVar = array(0,dim = c(2,2,nclus))
   gamma = array(0,dim =c(2,nclus,nSim))
   transfert = apply(table(out[[SU]]$optClus,SetUps[[SU]]$data$theta0$Lat),2,which.max)
-
+  
   j = 1
   for (it in 1:nSim){
     cIdx = 1
@@ -94,7 +102,7 @@ for(SU in listSU){#
   pct = 0.05
   out[[SU]]$gamqL = apply(gamma, c(1,2), quantile,pct/2)
   out[[SU]]$gamqU = apply(gamma, c(1,2), quantile,1-pct/2)
-
+  
 }
 
 for (SU in listSU){
@@ -205,10 +213,10 @@ xtable_Inter <- xtable(GamTabInter,
                        digits = rep(2,10)) # Number of decimal places for each column (0 for non-numeric)
 
 xtable_Var <- xtable(GamTabVar,
-                       caption = "Estimated latent cluster specific random slope",
-                       label = "tab:slope",
-                       align = rep('c',10), # Alignment for each column (l=left, r=right, c=center)
-                       digits = rep(2,10)) # Number of decimal places for each column (0 for non-numeric)
+                     caption = "Estimated latent cluster specific random slope",
+                     label = "tab:slope",
+                     align = rep('c',10), # Alignment for each column (l=left, r=right, c=center)
+                     digits = rep(2,10)) # Number of decimal places for each column (0 for non-numeric)
 
 # Print the LaTeX code
 cat("\n--- LaTeX Table using xtable ---\n")
@@ -228,8 +236,4 @@ print(xtable_Var,
       floating = TRUE, # Create a floating table environment (table, caption, label)
       latex.environments = c("center") # Center the table
 )
-
-CIInterS2 =  paste(paste('blob{',paste(mapply(function(x, y) sprintf("[%.1f, %.1f]", x, y), out$Wrong$gamqL[1,],out$Wrong$gamqU[1,]))),collapse = '}&')
-CIInterS1 = paste(paste('blob{',paste(mapply(function(x, y) sprintf("[%.1f, %.1f]", x, y), out$CorHard$gamqL[1,],out$CorHard$gamqU[1,]))),collapse = '}&')
-CIVarS2 = paste(paste('blob{',paste(mapply(function(x, y) sprintf("[%.1f, %.1f]", x, y), out$Wrong$gamqL[2,],out$Wrong$gamqU[2,]))),collapse = '}&')
-CIVarS1 = paste(paste('blob{',paste(mapply(function(x, y) sprintf("[%.1f, %.1f]", x, y), out$CorHard$gamqL[2,],out$CorHard$gamqU[2,]))),collapse = '}&')
+# 

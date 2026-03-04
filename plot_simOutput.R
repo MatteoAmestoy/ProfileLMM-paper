@@ -9,7 +9,7 @@ store = readRDS(paste0('C:/Users/VNOB-0731/Documents/GitHub/profileLMM/Restart/s
 
 
 labelSU = c('Scenario 1', 'Scenario 2')
-labelMeth = c('Profile LMM', 'True cluster assignment', 'True cluster parameters')
+labelMeth = c('Profile LMM', 'True Centroids and Variance ', 'True Cluster Assignment')
 
 
 
